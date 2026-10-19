@@ -25,6 +25,27 @@ public final class ColorUtils {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
+    public static int argb(int a, int r, int g, int b) {
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    /**
+     * Composites {@code top} over {@code bottom} ("source over"), with the top pixel's
+     * own alpha scaled by {@code topOpacity} (0 = only bottom, 1 = normal over).
+     */
+    public static int blend(int top, int bottom, double topOpacity) {
+        double ta = alpha(top) / 255.0 * topOpacity;
+        double ba = alpha(bottom) / 255.0;
+        double oa = ta + ba * (1 - ta);
+        if (oa <= 0) {
+            return 0;
+        }
+        int r = (int) Math.round((red(top) * ta + red(bottom) * ba * (1 - ta)) / oa);
+        int g = (int) Math.round((green(top) * ta + green(bottom) * ba * (1 - ta)) / oa);
+        int b = (int) Math.round((blue(top) * ta + blue(bottom) * ba * (1 - ta)) / oa);
+        return argb((int) Math.round(oa * 255), r, g, b);
+    }
+
     /** Euclidean distance between two colors in RGB space: sqrt(dR^2 + dG^2 + dB^2). */
     public static double distance(int c1, int c2) {
         int dr = red(c1) - red(c2);

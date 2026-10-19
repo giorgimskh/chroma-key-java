@@ -7,6 +7,8 @@ public final class ArgsParser {
         public String outputPath;
         public int keyColor;
         public double distance;
+        public double softness;
+        public boolean despill;
         public String backgroundPath;
         public int offsetX;
         public int offsetY;
@@ -19,6 +21,7 @@ public final class ArgsParser {
         Options options = new Options();
         String color = null;
         String distance = null;
+        String softness = null;
         String position = null;
 
         for (int i = 0; i < args.length; i++) {
@@ -35,6 +38,12 @@ public final class ArgsParser {
                     break;
                 case "-d":
                     distance = value(args, ++i, flag);
+                    break;
+                case "-s":
+                    softness = value(args, ++i, flag);
+                    break;
+                case "--despill":
+                    options.despill = true;
                     break;
                 case "-b":
                     options.backgroundPath = value(args, ++i, flag);
@@ -64,7 +73,10 @@ public final class ArgsParser {
         }
 
         options.keyColor = ColorUtils.parseColor(color);
-        options.distance = parseDistance(distance);
+        options.distance = parseNonNegative(distance, "Distance");
+        if (softness != null) {
+            options.softness = parseNonNegative(softness, "Softness");
+        }
 
         if (position != null) {
             int[] xy = parsePosition(position);
@@ -76,15 +88,17 @@ public final class ArgsParser {
 
     public static String usage() {
         return String.join(System.lineSeparator(),
-                "Usage: java -cp out chromakey.Main -i <input> -o <output.png> -c <color> -d <distance> [-b <background>] [-p <x,y>]",
+                "Usage: java -cp out chromakey.Main -i <input> -o <output.png> -c <color> -d <distance> [-s <softness>] [--despill] [-b <background>] [-p <x,y>]",
                 "",
                 "Options:",
                 "  -i  input image path (photo with the green background)",
                 "  -o  output image path (PNG)",
                 "  -c  key color, e.g. \"0,255,0\" or \"#00FF00\"",
                 "  -d  distance (tolerance), a number >= 0, max ~441.67",
+                "  -s  softness: width of the blended edge band beyond -d (optional, default 0 = hard edges)",
                 "  -b  background image path (optional; keyed pixels become transparent if omitted)",
                 "  -p  background position as x,y offset (optional, default 0,0)",
+                "  --despill  remove the key color's tint from the kept pixels (optional)",
                 "  -h  show this help");
     }
 
@@ -96,18 +110,18 @@ public final class ArgsParser {
     }
 
     private static boolean isFlag(String s) {
-        return s.matches("-[iocdbph]");
+        return s.matches("-[iocdsbph]") || s.equals("--despill");
     }
 
-    private static double parseDistance(String text) {
+    private static double parseNonNegative(String text, String name) {
         double value;
         try {
             value = Double.parseDouble(text.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Distance must be a number, got: \"" + text + "\"");
+            throw new IllegalArgumentException(name + " must be a number, got: \"" + text + "\"");
         }
         if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
-            throw new IllegalArgumentException("Distance must be a finite number >= 0, got: " + text);
+            throw new IllegalArgumentException(name + " must be a finite number >= 0, got: " + text);
         }
         return value;
     }

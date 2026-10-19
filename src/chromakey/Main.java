@@ -21,7 +21,7 @@ public class Main {
                     ? null
                     : readImage(options.backgroundPath, "background");
 
-            ChromaKeyer keyer = new ChromaKeyer(options.keyColor, options.distance);
+            ChromaKeyer keyer = new ChromaKeyer(options.keyColor, options.distance, options.softness, options.despill);
             BufferedImage result = keyer.apply(input, background, options.offsetX, options.offsetY);
 
             writePng(result, options.outputPath);
